@@ -1,0 +1,66 @@
+services:
+  worker-a:
+    build: .
+    container_name: recsys-worker-a
+    command: ["python", "recommender.py", "worker", "worker-a", "0.0.0.0:50051"]
+
+  worker-b:
+    build: .
+    container_name: recsys-worker-b
+    command: ["python", "recommender.py", "worker", "worker-b", "0.0.0.0:50052"]
+
+  coordinator-backup:
+    build: .
+    container_name: recsys-coordinator-backup
+    environment:
+      - WORKERS=worker-a=worker-a:50051,worker-b=worker-b:50052
+    command: ["python", "recommender.py", "coordinator", "--address", "0.0.0.0:50053"]
+    ports:
+      - "50053:50053"
+    depends_on:
+      - worker-a
+      - worker-b
+
+  coordinator-primary:
+    build: .
+    container_name: recsys-coordinator-primary
+    environment:
+      - WORKERS=worker-a=worker-a:50051,worker-b=worker-b:50052
+      - BACKUP_ADDRESS=coordinator-backup:50053
+    command: ["python", "recommender.py", "coordinator", "--address", "0.0.0.0:50050", "--backup-address", "coordinator-backup:50053"]
+    ports:
+      - "50050:50050"
+    depends_on:
+      - worker-a
+      - worker-b
+      - coordinator-backup
+
+  client-demo:
+    build: .
+    container_name: recsys-client-demo
+    environment:
+      - COORDINATOR_ADDRESS=coordinator:50050
+    command: |
+      python -c "
+      import grpc, recommender_pb2 as pb, recommender_pb2_grpc as rpc
+      from recommender import COORDINATOR, PROFILE
+      ch = grpc.insecure_channel(COORDINATOR)
+      grpc.channel_ready_future(ch).result(timeout=10)
+      client = rpc.CoordinatorServiceStub(ch)
+      req = pb.RecommendationRequest(user_id='target', top_k=2)
+      req.profile.extend(pb.Rating(user_id='target', item_id=i, value=v) for _, i, v in PROFILE)
+      res = client.Recommend(req, timeout=10)
+      b1 = pb.UpdateBatch(updates=[
+          pb.RatingUpdate(request_id='r2', node_id='node-b', logical_time=7, rating=pb.Rating(user_id='u9', item_id='D', value=4)),
+          pb.RatingUpdate(request_id='r1', node_id='node-a', logical_time=7, rating=pb.Rating(user_id='u9', item_id='C', value=5)),
+          pb.RatingUpdate(request_id='r3', node_id='node-a', logical_time=8, rating=pb.Rating(user_id='u8', item_id='A', value=3)),
+      ])
+      up = client.ApplyRatingUpdates(b1, timeout=5)
+      client.ApplyRatingUpdates(b1, timeout=5)
+      print('VALIDATION: PASS')
+      print(f'RPC: {res.workers_used} worker nodes; {res.pairs_dispatched} similarity pairs')
+      print('recommendations: ' + ', '.join(f'{x.item_id}={x.score:.4f}' for x in res.items))
+      print(f'Lamport batch order: {\", \".join(up.ordered_request_ids)}; clock: {up.logical_clock}')
+      "
+    depends_on:
+      - coordinator-primary

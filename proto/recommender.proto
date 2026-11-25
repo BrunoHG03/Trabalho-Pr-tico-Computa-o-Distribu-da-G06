@@ -1,0 +1,51 @@
+syntax = "proto3";
+package recsys;
+
+message Rating { string user_id = 1; string item_id = 2; double value = 3; }
+message ItemPair { string candidate_item = 1; string profile_item = 2; }
+message SimilarityRequest {
+  string task_id = 1;
+  uint64 dataset_version = 2;
+  repeated Rating ratings = 3;
+  repeated ItemPair pairs = 4;
+}
+message SimilarityValue { string candidate_item = 1; string profile_item = 2; double value = 3; }
+message SimilarityReply {
+  string task_id = 1;
+  uint64 dataset_version = 2;
+  repeated SimilarityValue values = 3;
+  string worker_id = 4;
+}
+service WorkerService { rpc CalculateSimilarities(SimilarityRequest) returns (SimilarityReply); }
+
+message RecommendationRequest {
+  string user_id = 1;
+  uint32 top_k = 2;
+  repeated Rating profile = 3;
+}
+message RecommendedItem { string item_id = 1; double score = 2; }
+message RecommendationReply {
+  repeated RecommendedItem items = 1;
+  uint32 workers_used = 2;
+  uint32 pairs_dispatched = 3;
+  uint64 dataset_version = 4;
+}
+message RatingUpdate { string request_id = 1; string node_id = 2; uint64 logical_time = 3; Rating rating = 4; }
+message UpdateBatch { repeated RatingUpdate updates = 1; }
+message UpdateResult { bool applied = 1; uint64 logical_clock = 2; repeated string ordered_request_ids = 3; }
+service CoordinatorService {
+  rpc Recommend(RecommendationRequest) returns (RecommendationReply);
+  rpc ApplyRatingUpdates(UpdateBatch) returns (UpdateResult);
+  rpc SyncState(ReplicaState) returns (SyncAck);
+}
+message ReplicaState {
+  uint64 dataset_version = 1;
+  uint64 logical_clock = 2;
+  repeated Rating ratings = 3;
+  repeated string applied_request_ids = 4;
+}
+
+message SyncAck {
+  bool ok = 1;
+  uint64 dataset_version = 2;
+}
