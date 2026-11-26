@@ -32,7 +32,6 @@ WORKER_TIMEOUT = 2.0
 RETRYABLE_WORKER_ERRORS = {grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED}
 logger = logging.getLogger(__name__)
 
-# Small deterministic dataset for a reproducible demonstration. It does not use private data.
 TRAINING = (
     ("u1", "A", 5), ("u1", "B", 4), ("u1", "C", 1), ("u1", "D", 1),
     ("u2", "A", 4), ("u2", "B", 5), ("u2", "C", 1), ("u2", "D", 2),
@@ -124,7 +123,6 @@ class Coordinator(rpc.CoordinatorServiceServicer):
     def _calculate_chunk(self, index, task, context):
         expected_pairs = Counter((pair.candidate_item, pair.profile_item) for pair in task.pairs)
         invalid_reply = False
-        # Each worker can try this task once. A retry carries the exact same request.
         for offset in range(len(self.stubs)):
             worker_index = (index + offset) % len(self.stubs)
             worker_id, _ = self.worker_targets[worker_index]
@@ -214,7 +212,6 @@ class Coordinator(rpc.CoordinatorServiceServicer):
         return result
 
     def ApplyRatingUpdates(self, request, context):
-        # A batch provides a stable set over which the coordinator can apply the defined total order.
         ordered = sorted(request.updates, key=lambda u: (u.logical_time, u.node_id, u.request_id))
         snapshot_to_sync = None
         with self.state_lock:
@@ -332,7 +329,6 @@ def run_demo():
         for worker_id, address in WORKERS:
             p = subprocess.Popen([sys.executable, os.path.abspath(__file__), "worker", worker_id, address], env=env, stdout=subprocess.DEVNULL)
             processes.append(p)
-        # Wait for workers to open their gRPC ports.
         ready = False
         for _ in range(100):
             if not all(p.poll() is None for p in processes): break
@@ -356,7 +352,6 @@ def run_demo():
             request = pb.RecommendationRequest(user_id="target", top_k=2)
             request.profile.extend(pb.Rating(user_id="target", item_id=i, value=v) for _, i, v in PROFILE)
             result = client.Recommend(request, timeout=10)
-            # A direct local computation is the correctness baseline.
             profile = [pb.Rating(user_id="target", item_id=i, value=v) for _, i, v in PROFILE]
             expected = local_recommend(service.ratings, profile, 2)
             assert [(x.item_id, round(x.score, 10)) for x in result.items] == [(i, round(s, 10)) for i, s in expected], "distributed output differs from local baseline"
@@ -374,7 +369,6 @@ def run_demo():
             assert len(service.ratings) == count_after_first_batch, "duplicate request IDs were applied more than once"
             clock = LamportClock(4)
             assert clock.receive(9) == 10 and clock.tick() == 11
-            # Timing context only: tiny workloads are dominated by networking/serialization.
             def ms(fn, n=15):
                 vals=[]
                 for _ in range(n):
