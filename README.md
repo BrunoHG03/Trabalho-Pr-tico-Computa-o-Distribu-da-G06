@@ -1,4 +1,11 @@
 # Trabalho Prático de Computação Distribuída - Grupo 06
+## Componentes do Grupo:
+- Bruno Hermeto Guimarães
+- Enzo de Melo Bolognani
+- João Pedro Nascimento Fernandes
+- Pedro Augusto Portes Araújo Cattoni
+- Victor Eduardo Cruz Arrighi
+
 ## Sistema de Recomendação Distribuído e Tolerante a Falhas (gRPC + Lamport + Primary-Backup)
 
 Protótipo acadêmico em Python 3 que demonstra chamadas RPC gRPC para recomendar filmes com filtragem colaborativa por item, ordenar atualizações em lote com relógios lógicos de Lamport e replicar o estado do coordenador no modelo Primário-Backup.
