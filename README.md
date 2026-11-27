@@ -11,7 +11,8 @@ Requer Python 3.10 ou superior e as portas locais 50050, 50051 e 50052 livres.
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python recommender.py demo ```
+python recommender.py demo
+```
 
 No Windows PowerShell, execute com o Python do ambiente virtual:
 
@@ -20,6 +21,19 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe recommender.py demo
 ```
+
+O comando inicia dois processos worker em portas distintas, levanta o serviço do coordenador, envia pedidos gRPC e executa as verificações. O programa encerra os processos dos workers ao terminar.
+
+## O que a demonstração verifica
+
+- Quatro pares de filmes são distribuídos entre dois workers por RPC.
+- A lista de recomendações coincide com o cálculo local para o mesmo conjunto.
+- Atualizações com carimbos lógicos são ordenadas por `(logical_time, node_id, request_id)`.
+- Repetir um lote com os mesmos `request_id` não reaplica as avaliações.
+- A regra do relógio de Lamport `max(local, recebido) + 1` é conferida.
+- São medidas 15 execuções da recomendação distribuída e local, reportando a mediana.
+
+O conjunto é sintético (24 avaliações, seis usuários de treinamento e quatro filmes). A medição em localhost ilustra o custo das chamadas RPC nessa amostra.
 
 # SEM FALHAS:
 docker compose up -d
