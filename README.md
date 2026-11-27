@@ -56,7 +56,7 @@ python -m venv .venv
 O comando inicia dois processos worker em portas distintas, levanta o serviço do coordenador, envia pedidos gRPC e executa as verificações. O programa encerra os processos dos workers ao terminar.
 
 ## Testar falhas e replicação (Testes automatizados)
-Requer Python 3.10 ou superior e as portas locais 50050, 50051, 50052 e 50053 livres.
+Requer Python 3.10 ou superior.
 
 ```bash
 python -m venv .venv
@@ -80,8 +80,7 @@ python -m venv .venv
 ## Demonstração com Docker Compose
 Pré-requisitos:
 Docker Engine (20.10+) e Docker Compose (v2+, comando `docker compose`) instalados e em execução.
-Requer Python 3.11 ou superior e as portas locais 50050, 50051, 50052 e 50053 livres.
-Instalar pacotes em `requirements.txt`
+Portas locais 50050, 50051, 50052 e 50053 livres.
 
 ### Cenário sem falhas:
 ```
@@ -133,16 +132,16 @@ docker compose down
 ### A primeira vez da execução após alteração de algum arquivo `.py` ou `.proto` executar utilizando `docker compose up -d --build` ao invés de `docker compose up -d`
 
 ## Arquivos:
-`recommender.py`: coordenador (primário e backup), worker, cliente replicado, cálculo de similaridade, Lamport e rotina de demonstração.
+- `recommender.py`: coordenador (primário e backup), worker, cliente replicado, cálculo de similaridade, Lamport e demonstração.
 
-`test_worker_failures.py`: testes de integração do tratamento de falhas dos workers.
+- `test_worker_failures.py`: testes de integração do tratamento de falhas dos workers.
 
-`test_replication.py`: testes de integração da replicação Primário-Backup e failover do cliente.
+- `test_replication.py`: testes de integração da replicação Primário-Backup e failover do cliente.
 
-`proto/recommender.proto`: definição dos serviços (CoordinatorService, WorkerService) e mensagens gRPC.
+- `proto/recommender.proto`: definição dos serviços (CoordinatorService, WorkerService) e mensagens gRPC.
 
-`recommender_pb2.py` e `recommender_pb2_grpc.py`: módulos gerados pelo grpcio-tools.
+- `recommender_pb2.py` e `recommender_pb2_grpc.py`: módulos gerados pelo grpcio-tools.
 
-`Dockerfile` e `docker-compose.yml`: empacotamento e orquestração dos containers do sistema distribuído.
+- `Dockerfile` e `docker-compose.yml`: empacotamento e orquestração dos containers do sistema distribuído.
 
-`requirements.txt`: versões usadas para executar e regenerar os módulos Protocol Buffers.
+- `requirements.txt`: versões usadas para executar e regenerar os módulos Protocol Buffers.
