@@ -1,4 +1,25 @@
-# Trabalho-Pr-tico-Computa-o-Distribu-da-G06
+# Trabalho Prático de Computação Distribuída - Grupo 06
+# Sistema de Recomendação Distribuído e Tolerante a Falhas (gRPC + Lamport + Primary-Backup)
+
+Protótipo acadêmico em Python 3 que demonstra chamadas RPC gRPC para recomendar filmes com filtragem colaborativa por item, ordenar atualizações em lote com relógios lógicos de Lamport e replicar o estado do coordenador no modelo Primário-Backup.
+
+## Executar a demonstração local
+
+Requer Python 3.10 ou superior e as portas locais 50050, 50051 e 50052 livres.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python recommender.py demo
+
+No Windows PowerShell, execute com o Python do ambiente virtual:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe recommender.py demo
+```
 
 # SEM FALHAS:
 docker compose up -d
